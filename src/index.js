@@ -1,11 +1,10 @@
+import './scss/index.scss'
+import './css/index.css'
+
 import foo from './foo'
-// import _ from 'lodash'
-// console.log(_.defaults({ 'a': 1 }, { 'a': 3, 'b': 2 }));
-// import npminfo from '../package.json'
+// import _ from 'lodash' // Rollup只能对ES模块上进行tree-shaking。CommonJS模块 - 像lodash和jQuery那样写的模块不能进行tree-shaking。
+import npminfo from '../package'
 
-console.log(foo)
+import compact from 'lodash/compact'
 
-const fn = () => {
-	console.log(...[1, 2, 3]);
-}
-fn()
+console.log(ENV)
