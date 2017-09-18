@@ -1,4 +1,5 @@
 const path = require('path')
+// 解析json
 const json = require('rollup-plugin-json')
 // commonjs 和 resolve 用来处理导入模块的, rollup 自身不具备导入外部模块的功能
 const commonjs = require('rollup-plugin-commonjs')
@@ -10,22 +11,29 @@ const replace = require('rollup-plugin-replace')
 // 压缩js
 const uglify = require('rollup-plugin-uglify')
 
-// css 还差如何把css插入html
+// css 还差如何把css插入html？？？
 const sass = require('node-sass')
 const postcss = require('rollup-plugin-postcss')
 const cssnano = require('cssnano')
 const autoprefixer = require('autoprefixer')
 
+// liveReload 和 服务器
+const livereload = require('rollup-plugin-livereload')
+const serve = require('rollup-plugin-serve')
 
+// 显示当前打包进度
+const progress = require('rollup-plugin-progress')
+
+// sass预处理函数
 const sassPreprocessor = (content, id) => new Promise((resolve) => {
     const result = sass.renderSync({ file: id })
     resolve({ code: result.css.toString() })
 })
 
-// 本地服务器，开发和生产分离
+// 当前开发模式
 const mode = process.env.NODE_ENV
 
-export default {
+const rollup = {
     name: 'fox',
     input: path.resolve(__dirname, '../src/index.js'),
     output: {
@@ -49,7 +57,7 @@ export default {
         // 处理css
         postcss({
             extract: mode === 'development' ? false : false,
-            extensions: [ '.css' ],
+            extensions: ['.css'],
             plugins: [
                 autoprefixer(),
                 cssnano()
@@ -71,7 +79,24 @@ export default {
             exclude: 'node_modules/**',
             ENV: JSON.stringify(mode)
         }),
-        (process.env.NODE_ENV === 'production' && uglify())
+        (process.env.NODE_ENV === 'production' && uglify()),
+        (process.env.NODE_ENV === 'production' && progress({
+            clearLine: false
+        }))
     ],
     sourcemap: true
 }
+
+if (mode === 'development') {
+    const SERVE = serve({
+        open: true,
+        contentBase: path.resolve(__dirname, '../')
+    })
+    const LIVERELOAD = livereload({
+        watch: path.resolve(__dirname, '../')
+    })
+    rollup.plugins.push(SERVE)
+    rollup.plugins.push(LIVERELOAD)
+}
+
+export default rollup
