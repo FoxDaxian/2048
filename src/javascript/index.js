@@ -30,7 +30,6 @@ class Index extends Canvas{
 		this.drawBg()
 
 		const rand = this.randArr.splice(Math.ceil(Math.random() * this.randArr.length) - 1, 1)
-
 		const x = rand % this.count
 		const y = ~~(rand / this.count)
 		this.state[x][y] = 2
@@ -119,13 +118,22 @@ class Index extends Canvas{
 
 	// 画所有的方块
 	animateAll () {
-		for (let x = 0; x < this.count; x++) {
-			for (let y = 0; y < this.count; y++) {
-				if (typeof this.state[x][y] !== 'undefined') {
-					this.animate(x, y, this.state[x][y])
+		const tempArr = []
+		for (let i = 0; i < this.count; i++) {
+			if (typeof this.state[i][0] === 'undefined') {
+
+			} else {
+				tempArr.push(this.state[i][0])
+				for (let j = 0, len = tempArr.length - 1; j < len; j++) {
+					if (tempArr[j] === tempArr[j + 1]) {
+						tempArr[j] *= 2
+						tempArr[j + 1] = undefined
+						j++
+					}
 				}
 			}
 		}
+		console.log(tempArr)
 	}
 
 	// 处理键盘事件
@@ -160,10 +168,12 @@ class Index extends Canvas{
 
 		// 再随机生成一个
 		const rand = this.randArr.splice(Math.ceil(Math.random() * this.randArr.length) - 1, 1)
-		const x = rand % this.count
-		const y = ~~(rand / this.count)
-		this.state[x][y] = 2
-		this.drawBox(x, y, 2)
+		if (rand.length) {
+			const x = rand % this.count
+			const y = ~~(rand / this.count)
+			this.state[x][y] = 2
+			this.drawBox(x, y, 2)
+		}
 	}
 
 	operate () {
