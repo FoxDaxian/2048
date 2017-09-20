@@ -98,30 +98,92 @@ class Index extends Canvas{
 		this.ctx.restore()
 	}
 
-	// 动画
-	animate (x, y, num) {
-
-		const realX = (this.boxSize * x) + this.boxGap * (x + 1)
-		const realY = (this.boxSize * y) + this.boxGap * (y + 1)
-
-		this.ctx.fillStyle = '#EEE4DA'
-		this.ctx.fillRect(realX, realY, this.boxSize, this.boxSize)
-
-		this.ctx.save()
-		this.ctx.fillStyle = 'red'
-		this.ctx.textAlign = 'center'
-		this.ctx.textBaseline = 'middle'
-		this.ctx.font = '30px sans-serif'
-		this.ctx.fillText(num, realX + this.boxSize / 2, realY + this.boxSize / 2)
-		this.ctx.restore()
+	// 画全部的方块
+	drawAll () {
+		for (var x = 0; x < this.count; x++) {
+			for (var y = 0; y < this.count; y++) {
+				if (typeof this.state[x][y] !== 'undefined') {
+					this.drawBox(x, y, this.state[x][y])
+				}
+			}
+		}
 	}
 
-	// 画所有的方块
-	animateAll () {
+	// 操作并计算重绘所有方块
+	leftOperate () {
+		if (this.canLeft()) {
+			console.log('可以左移')
+			this.moveLeft()
+		}
+		this.drawAll()
+	}
+
+	// 还是有bug
+	// 进行左移操作
+	moveLeft () {
 		for (let y = 0; y < this.count; y++) {
 			for (let x = 0; x < this.count; x++) {
-				
+				// 找右边不为undefined的
+				let condition = this.findExist(x, y)
+				if (condition !== -1) {
+					const {i: tempx, y: tempy} = condition
+					if (typeof this.state[x][y] === 'undefined') {
+						this.state[x][y] = this.state[tempx][tempy]
+						this.state[tempx][tempy] = undefined
+						this.randArr.splice(y * this.count + x, 1)
+						this.randArr.splice(tempy * this.count + tempx - 1, 0, tempy * this.count + tempx)
+					} else {
+						if (this.state[x][y] === this.state[tempx][tempy]) {
+							this.state[x][y] *= 2
+							this.state[tempx][tempy] = undefined
+							this.randArr.splice(tempy * this.count + tempx - 1, 0, tempy * this.count + tempx)
+						} else {
+							if (x + 1 !== tempx) {
+								this.state[x + 1][y] = this.state[tempx][tempy]
+								this.state[tempx][tempy] = undefined
+								this.randArr.splice(y * this.count + x + 1, 1)
+								this.randArr.splice(tempy * this.count + tempx - 1, 0, tempy * this.count + tempx)
+							}
+						}
+					}
+				}
 			}
+		}
+	}
+
+	// 找右边不为undefined的,这个时候向左移动的时候用的
+	findExist (x, y) {
+		for (let i = x + 1; i < this.count; i++) {
+			if (typeof this.state[i][y] !== 'undefined') {
+				return {i, y}
+			}
+		}
+		return -1
+	}
+
+	// 能不能左移，需要左移的核心逻辑
+	canLeft () {
+		return this.state.some((el, i) => {
+			for (let j = 0; j < this.count; j++) {
+				if (typeof this.state[i][j] !== 'undefined' && i > 0) {
+					if (typeof this.state[i - 1][j] === 'undefined' || this.state[i - 1][j] === this.state[i][j]) {
+						return true
+					}
+				}
+			}
+			return false
+		})
+	}
+
+	// 判断能不能左移的核心逻辑
+	judge (x, y) {
+		try {
+			if (typeof this.state[x - 1][y] === 'undefined' || this.state[x - 1][y] === this.state[x][y]) {
+				return true
+			}
+			return false
+		} catch (err) {
+			return false
 		}
 	}
 
@@ -135,22 +197,22 @@ class Index extends Canvas{
 		this.ctx.fillRect(0, 0, this.size, this.size)
 		this.drawBg()
 
-		// 插入init中间了
-		this.animateAll()
 
 
 		switch (ev.keyCode) {
 			case 38:
-			console.log('上')
+			// console.log('上')
 			break;
 			case 40:
-			console.log('下')
+			// console.log('下')
 			break;
 			case 37:
 			console.log('左')
+			// 插入init中间了
+			this.leftOperate()
 			break;
 			case 39:
-			console.log('右')
+			// console.log('右')
 			break;
 		}
 
