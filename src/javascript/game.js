@@ -118,22 +118,11 @@ class Index extends Canvas{
 
 	// 画所有的方块
 	animateAll () {
-		const tempArr = []
-		for (let i = 0; i < this.count; i++) {
-			if (typeof this.state[i][0] === 'undefined') {
-
-			} else {
-				tempArr.push(this.state[i][0])
-				for (let j = 0, len = tempArr.length - 1; j < len; j++) {
-					if (tempArr[j] === tempArr[j + 1]) {
-						tempArr[j] *= 2
-						tempArr[j + 1] = undefined
-						j++
-					}
-				}
+		for (let y = 0; y < this.count; y++) {
+			for (let x = 0; x < this.count; x++) {
+				
 			}
 		}
-		console.log(tempArr)
 	}
 
 	// 处理键盘事件

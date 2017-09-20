@@ -1,4 +1,4 @@
 import './scss/index.scss'
-import Game from './javascript/index.js'
+import Game from './javascript/game.js'
 
 const game = new Game()
