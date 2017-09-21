@@ -110,81 +110,297 @@ class Index extends Canvas{
 	}
 
 	// 操作并计算重绘所有方块
-	leftOperate () {
-		if (this.canLeft()) {
-			console.log('可以左移')
-			this.moveLeft()
+	leftOperate (dir) {
+		if (this.canMove(dir)) {
+			this.justMove(dir)
 		}
 		this.drawAll()
 	}
 
-	// 还是有bug
-	// 进行左移操作
-	moveLeft () {
-		for (let y = 0; y < this.count; y++) {
-			for (let x = 0; x < this.count; x++) {
-				// 找右边不为undefined的
-				let condition = this.findExist(x, y)
-				if (condition !== -1) {
-					const {i: tempx, y: tempy} = condition
-					if (typeof this.state[x][y] === 'undefined') {
-						this.state[x][y] = this.state[tempx][tempy]
+	// 左右移动还是有问题，弄完左右弄上下，一步步来吧，碎了
+	// 进行移动操作
+	justMove (dir) {
+		const fn = (x, y, tempx, tempy) => {
+			if (typeof this.state[x][y] === 'undefined') {
+				this.state[x][y] = this.state[tempx][tempy]
+				this.state[tempx][tempy] = undefined
+
+				this.delFromRandArr(y * this.count + x, this.randArr)
+				this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+				if (dir === 1) {
+					x--
+				}
+				if (dir === 2) {
+					x++
+				}
+				if (dir === 3) {
+					y++
+				}
+				if (dir === 4) {
+					y--
+				}
+			} else {
+				if (this.state[x][y] === this.state[tempx][tempy]) {
+					this.state[x][y] *= 2
+					this.state[tempx][tempy] = undefined
+
+					this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+					if (dir === 1) {
+						x--
+					}
+					if (dir === 2) {
+						x++
+					}
+					if (dir === 3) {
+						y++
+					}
+					if (dir === 4) {
+						y--
+					}
+				} else {
+					if (dir === 1 && x + 1 !== tempx) {
+						this.state[x + 1][y] = this.state[tempx][tempy]
 						this.state[tempx][tempy] = undefined
-						this.randArr.splice(y * this.count + x, 1)
-						this.randArr.splice(tempy * this.count + tempx - 1, 0, tempy * this.count + tempx)
-					} else {
-						if (this.state[x][y] === this.state[tempx][tempy]) {
-							this.state[x][y] *= 2
-							this.state[tempx][tempy] = undefined
-							this.randArr.splice(tempy * this.count + tempx - 1, 0, tempy * this.count + tempx)
-						} else {
-							if (x + 1 !== tempx) {
-								this.state[x + 1][y] = this.state[tempx][tempy]
-								this.state[tempx][tempy] = undefined
-								this.randArr.splice(y * this.count + x + 1, 1)
-								this.randArr.splice(tempy * this.count + tempx - 1, 0, tempy * this.count + tempx)
-							}
+						this.delFromRandArr(y * this.count + x + 1, this.randArr)
+						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+						if (dir === 1) {
+							x--
 						}
+						if (dir === 2) {
+							x++
+						}
+						if (dir === 3) {
+							y++
+						}
+						if (dir === 4) {
+							y--
+						}
+					}
+					if (dir === 2 && x - 1 !== tempx) {
+						this.state[x - 1][y] = this.state[tempx][tempy]
+						this.state[tempx][tempy] = undefined
+						this.delFromRandArr(y * this.count + x - 1, this.randArr)
+						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+						if (dir === 1) {
+							x--
+						}
+						if (dir === 2) {
+							x++
+						}
+						if (dir === 3) {
+							y++
+						}
+						if (dir === 4) {
+							y--
+						}
+					}
+					if (dir === 3 && y + 1 !== tempx) {
+						this.state[x][y + 1] = this.state[tempx][tempy]
+						this.state[tempx][tempy] = undefined
+						this.delFromRandArr((y + 1) * this.count + x, this.randArr)
+						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+						if (dir === 1) {
+							x--
+						}
+						if (dir === 2) {
+							x++
+						}
+						if (dir === 3) {
+							y++
+						}
+						if (dir === 4) {
+							y--
+						}
+					}
+					if (dir === 4 && y + 1 !== tempx) {
+						this.state[x][y + 1] = this.state[tempx][tempy]
+						this.state[tempx][tempy] = undefined
+						this.delFromRandArr((y + 1) * this.count + x, this.randArr)
+						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+						if (dir === 1) {
+							x--
+						}
+						if (dir === 2) {
+							x++
+						}
+						if (dir === 3) {
+							y++
+						}
+						if (dir === 4) {
+							y--
+						}
+					}
+				}
+			}
+		}
+
+		// 左
+		if (dir === 1) {
+			for (let y = 0; y < this.count; y++) {
+				for (let x = 0; x < this.count; x++) {
+					// 一个比较重要的点：因为randarr的长度改变了，所以出现bug
+					let condition = this.findExist(x, y, dir)
+
+					if (condition !== -1) {
+						const {x: tempx, y: tempy} = condition
+						fn(x, y, tempx, tempy)
+					}
+				}
+			}
+		}
+		// 右
+		if (dir === 2) {
+			for (let y = 0; y < this.count; y++) {
+				for (let x = this.count - 1; x > -1; x--) {
+					// 一个比较重要的点：因为randarr的长度改变了，所以出现bug
+					let condition = this.findExist(x, y, dir)
+
+					if (condition !== -1) {
+						const {x: tempx, y: tempy} = condition
+						fn(x, y, tempx, tempy)
+					}
+				}
+			}
+		}
+		// 上
+		if (dir === 3) {
+			for (let x = 0; x < this.count; x++) {
+				for (let y = 0; y < this.count; y++) {
+					// 一个比较重要的点：因为randarr的长度改变了，所以出现bug
+					let condition = this.findExist(x, y, dir)
+					console.log(condition)
+
+					if (condition !== -1) {
+						const {x: tempx, y: tempy} = condition
+						fn(x, y, tempx, tempy)
+					}
+				}
+			}
+		}
+		// 下
+		if (dir === 4) {
+			for (let x = 0; x < this.count; x++) {
+				for (let y = this.count - 1; y > -1; y--) {
+					// 一个比较重要的点：因为randarr的长度改变了，所以出现bug
+					let condition = this.findExist(x, y, dir)
+
+					if (condition !== -1) {
+						const {x: tempx, y: tempy} = condition
+						fn(x, y, tempx, tempy)
 					}
 				}
 			}
 		}
 	}
 
-	// 找右边不为undefined的,这个时候向左移动的时候用的
-	findExist (x, y) {
-		for (let i = x + 1; i < this.count; i++) {
-			if (typeof this.state[i][y] !== 'undefined') {
-				return {i, y}
+	// 在randArr插入一个
+	insetToRandArr (num, arr) {
+		const i = arr.findIndex((value) => {
+			return value > num
+		})
+		arr.splice(i, 0, num)
+	}
+
+	// 从randArr中删除一个
+	delFromRandArr (num, arr) {
+		const i = arr.findIndex(function(value) {
+			return value === num
+		})
+		arr.splice(i, 1)
+	}
+
+	// 找不为undefined的,这个时候向左移动的时候用的
+	findExist (x, y, dir) {
+		// 左
+		if (dir === 1) {
+			if (x === this.count - 1) {
+				return -1
+			}
+			for (let i = x + 1; i < this.count; i++) {
+				if (typeof this.state[i][y] !== 'undefined') {
+					return {
+						x: i,
+						y
+					}
+				}
+			}
+		}
+		// 右
+		if (dir === 2) {
+			if (x === 0) {
+				return -1
+			}
+			for (let i = x - 1; i > -1; i--) {
+				if (typeof this.state[i][y] !== 'undefined') {
+					return {
+						x: i,
+						y
+					}
+				}
+			}
+		}
+		// 上
+		if (dir === 3) {
+			if (y === this.count - 1) {
+				return -1
+			}
+			for (let i = y + 1; i < this.count; i++) {
+				if (typeof this.state[x][i] !== 'undefined') {
+					return {
+						y: i,
+						x
+					}
+				}
+			}
+		}
+		//  下
+		if (dir === 4) {
+			if (y === 0) {
+				return -1
+			}
+			for (let i = y + 1; i < this.count; i++) {
+				if (typeof this.state[x][i] !== 'undefined') {
+					return {
+						y: i,
+						x
+					}
+				}
 			}
 		}
 		return -1
 	}
 
-	// 能不能左移，需要左移的核心逻辑
-	canLeft () {
+	// 能不能移动
+	canMove (dir) {
 		return this.state.some((el, i) => {
 			for (let j = 0; j < this.count; j++) {
-				if (typeof this.state[i][j] !== 'undefined' && i > 0) {
+				// 左
+				if (dir === 1 && typeof this.state[i][j] !== 'undefined' && i > 0) {
 					if (typeof this.state[i - 1][j] === 'undefined' || this.state[i - 1][j] === this.state[i][j]) {
+						return true
+					}
+				}
+				// 右
+				if (dir === 2 && typeof this.state[i][j] !== 'undefined' && i < 3) {
+					if (typeof this.state[i + 1][j] === 'undefined' || this.state[i + 1][j] === this.state[i][j]) {
+						return true
+					}
+				}
+				// 上
+				if (dir === 3 && typeof this.state[i][j] !== 'undefined' && j > 0) {
+					if (typeof this.state[j - 1][i] === 'undefined' || this.state[j - 1][i] === this.state[i][j]) {
+						return true
+					}
+				}
+				//  下
+				if (dir === 4 && typeof this.state[i][j] !== 'undefined' && j < 3) {
+					if (typeof this.state[j + 1][i] === 'undefined' || this.state[j + 1][i] === this.state[i][j]) {
 						return true
 					}
 				}
 			}
 			return false
 		})
-	}
-
-	// 判断能不能左移的核心逻辑
-	judge (x, y) {
-		try {
-			if (typeof this.state[x - 1][y] === 'undefined' || this.state[x - 1][y] === this.state[x][y]) {
-				return true
-			}
-			return false
-		} catch (err) {
-			return false
-		}
 	}
 
 	// 处理键盘事件
@@ -198,21 +414,28 @@ class Index extends Canvas{
 		this.drawBg()
 
 
-
+		/** 方向对应num
+		**  左：1
+		**  右：2
+		**  上：3
+		**	下：4
+		**/
 		switch (ev.keyCode) {
-			case 38:
-			// console.log('上')
-			break;
-			case 40:
-			// console.log('下')
-			break;
 			case 37:
-			console.log('左')
-			// 插入init中间了
-			this.leftOperate()
+			// console.log('左')
+			this.leftOperate(1)
 			break;
 			case 39:
 			// console.log('右')
+			this.leftOperate(2)
+			break;
+			case 38:
+			// console.log('上')
+			this.leftOperate(3)
+			break;
+			case 40:
+			// console.log('下')
+			this.leftOperate(4)
 			break;
 		}
 
