@@ -1,5 +1,8 @@
 # 2048
 
+[live demo](https://a13821190779.github.io/2048/index.html '2048')
+
+
 license: [MIT](https://github.com/thomaspark/bootswatch/blob/gh-pages/LICENSE 'MIT')
 
 
