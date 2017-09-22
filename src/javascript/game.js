@@ -3,7 +3,7 @@ import colors from '../config/color.js'
 
 // 游戏规则很简单：每次控制所有方块向同一个方向运动，两个相同数字的方块撞在一起之后合并成为他们的和，每次操作之后会在空白的方格处随机生成一个2或者4，最终得到一个“2048”的方块就算胜利了。如果16个格子全部填满并且相邻的格子都不相同也就是无法移动的话，那么恭喜你，gameover。
 
-class Index extends Canvas{
+class Game extends Canvas{
 	constructor () {
 		super()
 		this.count = 4
@@ -113,15 +113,21 @@ class Index extends Canvas{
 
 	// 操作并计算重绘所有方块
 	operate (dir) {
-		if (this.hasMove(dir)) {
+		const flag = this.hasMove(dir)
+		console.log(flag)
+		if (flag) {
+			this.preOperate()
 			this.justMove(dir)
+			this.drawAll()
+			// 再随机生成一个
+			this.randProdBox()
 		}
-		this.drawAll()
 	}
 
 	// 进行移动操作
 	justMove (dir) {
-		const fn = (x, y, tempx, tempy) => {
+		// 操作过了
+		const operated = (x, y, tempx, tempy) => {
 			if (typeof this.state[x][y] === 'undefined') {
 				this.state[x][y] = this.state[tempx][tempy]
 				this.state[tempx][tempy] = undefined
@@ -136,149 +142,99 @@ class Index extends Canvas{
 					this.state[tempx][tempy] = undefined
 
 					this.insetToRandArr(tempy * this.count + tempx, this.randArr)
-					// 这个true不能要，不然会造成：4 2 2 -> 8 
+					// 这个return true不能要，不然会造成：4 2 2 -> 8 
 					// 正确的是：4 2 2 -> 4 4
-					// return true
 				} else {
-					if (dir === 1 && x + 1 !== tempx) {
-						// 左
-						this.state[x + 1][y] = this.state[tempx][tempy]
-						this.state[tempx][tempy] = undefined
-						this.delFromRandArr(y * this.count + x + 1, this.randArr)
-						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
-						return true
-					}
-					if (dir === 2 && x - 1 !== tempx) {
-						// 右
-						this.state[x - 1][y] = this.state[tempx][tempy]
-						this.state[tempx][tempy] = undefined
-						this.delFromRandArr(y * this.count + x - 1, this.randArr)
-						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
-						return true
-					}
-					if (dir === 3 && y + 1 !== tempy) {
-						// 上
-						this.state[x][y + 1] = this.state[tempx][tempy]
-						this.state[tempx][tempy] = undefined
-						this.delFromRandArr((y + 1) * this.count + x, this.randArr)
-						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
-						return true
-					}
-					if (dir === 4 && y - 1 !== tempy) {
-						// 下
-						this.state[x][y - 1] = this.state[tempx][tempy]
-						this.state[tempx][tempy] = undefined
-						this.delFromRandArr((y - 1) * this.count + x, this.randArr)
-						this.insetToRandArr(tempy * this.count + tempx, this.randArr)
-						return true
+					switch (dir) {
+						case 1:
+						if (x + 1 !== tempx) {
+							// 左
+							this.state[x + 1][y] = this.state[tempx][tempy]
+							this.state[tempx][tempy] = undefined
+							this.delFromRandArr(y * this.count + x + 1, this.randArr)
+							this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+							return true
+						}
+						break;
+						case 2:
+						if (x - 1 !== tempx) {
+							// 右
+							this.state[x - 1][y] = this.state[tempx][tempy]
+							this.state[tempx][tempy] = undefined
+							this.delFromRandArr(y * this.count + x - 1, this.randArr)
+							this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+							return true
+						}
+						break;
+						case 3:
+						if (y + 1 !== tempy) {
+							// 上
+							this.state[x][y + 1] = this.state[tempx][tempy]
+							this.state[tempx][tempy] = undefined
+							this.delFromRandArr((y + 1) * this.count + x, this.randArr)
+							this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+							return true
+						}
+						break;
+						case 4:
+						if (y - 1 !== tempy) {
+							// 下
+							this.state[x][y - 1] = this.state[tempx][tempy]
+							this.state[tempx][tempy] = undefined
+							this.delFromRandArr((y - 1) * this.count + x, this.randArr)
+							this.insetToRandArr(tempy * this.count + tempx, this.randArr)
+							return true
+						}
+						break;
 					}
 				}
 			}
 		}
 
-		// 左
-		if (dir === 1) {
+		const canRestart = (x, y) => {
+			let condition = this.findExist(x, y, dir)
+
+			if (condition !== -1) {
+				const {x: tempx, y: tempy} = condition
+				if (operated(x, y, tempx, tempy)) {
+					return true
+				}
+			}
+		}
+
+		switch (dir) {
+			// 左
+			case 1:
 			for (let y = 0; y < this.count; y++) {
 				for (let x = 0; x < this.count; x++) {
-					let condition = this.findExist(x, y, dir)
-
-					if (condition !== -1) {
-						const {x: tempx, y: tempy} = condition
-						if (fn(x, y, tempx, tempy)) {
-							if (dir === 1) {
-								x--
-							}
-							if (dir === 2) {
-								x++
-							}
-							if (dir === 3) {
-								y--
-							}
-							if (dir === 4) {
-								y++
-							}
-						}
-					}
+					canRestart(x, y) && x--
 				}
 			}
-		}
-		// 右
-		if (dir === 2) {
+			break;
+			// 右
+			case 2:
 			for (let y = 0; y < this.count; y++) {
 				for (let x = this.count - 1; x > -1; x--) {
-					let condition = this.findExist(x, y, dir)
-
-					if (condition !== -1) {
-						const {x: tempx, y: tempy} = condition
-						if (fn(x, y, tempx, tempy)) {
-							if (dir === 1) {
-								x--
-							}
-							if (dir === 2) {
-								x++
-							}
-							if (dir === 3) {
-								y--
-							}
-							if (dir === 4) {
-								y++
-							}
-						}
-					}
+					canRestart(x, y) && x++
 				}
 			}
-		}
-		// 上
-		if (dir === 3) {
+			break;
+			// 上
+			case 3:
 			for (let x = 0; x < this.count; x++) {
 				for (let y = 0; y < this.count; y++) {
-					let condition = this.findExist(x, y, dir)
-
-					if (condition !== -1) {
-						const {x: tempx, y: tempy} = condition
-						if (fn(x, y, tempx, tempy)) {
-							if (dir === 1) {
-								x--
-							}
-							if (dir === 2) {
-								x++
-							}
-							if (dir === 3) {
-								y--
-							}
-							if (dir === 4) {
-								y++
-							}
-						}
-					}
+					canRestart(x, y) && y--
 				}
 			}
-		}
-		// 下
-		if (dir === 4) {
+			break;
+			// 下
+			case 4:
 			for (let x = 0; x < this.count; x++) {
 				for (let y = this.count - 1; y > -1; y--) {
-					let condition = this.findExist(x, y, dir)
-
-					if (condition !== -1) {
-						const {x: tempx, y: tempy} = condition
-						if (fn(x, y, tempx, tempy)) {
-							if (dir === 1) {
-								x--
-							}
-							if (dir === 2) {
-								x++
-							}
-							if (dir === 3) {
-								y--
-							}
-							if (dir === 4) {
-								y++
-							}
-						}
-					}
+					canRestart(x, y) && y++
 				}
 			}
+			break;
 		}
 	}
 
@@ -300,8 +256,9 @@ class Index extends Canvas{
 
 	// 找任意一排中存在的值
 	findExist (x, y, dir) {
-		// 左
-		if (dir === 1) {
+		switch (dir) {
+			// 左
+			case 1:
 			if (x === this.count - 1) {
 				return -1
 			}
@@ -313,9 +270,9 @@ class Index extends Canvas{
 					}
 				}
 			}
-		}
-		// 右
-		if (dir === 2) {
+			break;
+			// 右
+			case 2:
 			if (x === 0) {
 				return -1
 			}
@@ -327,9 +284,9 @@ class Index extends Canvas{
 					}
 				}
 			}
-		}
-		// 上
-		if (dir === 3) {
+			break;
+			// 上
+			case 3:
 			if (y === this.count - 1) {
 				return -1
 			}
@@ -341,9 +298,9 @@ class Index extends Canvas{
 					}
 				}
 			}
-		}
-		//  下
-		if (dir === 4) {
+			break;
+			//  下
+			case 4:
 			if (y === 0) {
 				return -1
 			}
@@ -355,37 +312,52 @@ class Index extends Canvas{
 					}
 				}
 			}
+			break;
 		}
 		return -1
 	}
 
 	// 有没有可以移动的方块
 	hasMove (dir) {
-		return this.state.some((el, i) => {
-			for (let j = 0; j < this.count; j++) {
-				// 左
-				if (dir === 1 && typeof this.state[i][j] !== 'undefined' && i > 0) {
-					if (typeof this.state[i - 1][j] === 'undefined' || this.state[i - 1][j] === this.state[i][j]) {
-						return true
-					}
+		return this.state.some((el, x) => {
+			for (let y = 0; y < this.count; y++) {
+				// 为空则跳过
+				if (typeof this.state[x][y] === 'undefined') {
+					continue
 				}
-				// 右
-				if (dir === 2 && typeof this.state[i][j] !== 'undefined' && i < 3) {
-					if (typeof this.state[i + 1][j] === 'undefined' || this.state[i + 1][j] === this.state[i][j]) {
-						return true
+				switch (dir) {
+					// 左
+					case 1:
+					if (x > 0) {
+						if (typeof this.state[x - 1][y] === 'undefined' || this.state[x - 1][y] === this.state[x][y]) {
+							return true
+						}
 					}
-				}
-				// 上
-				if (dir === 3 && typeof this.state[i][j] !== 'undefined' && j > 0) {
-					if (typeof this.state[j - 1][i] === 'undefined' || this.state[j - 1][i] === this.state[i][j]) {
-						return true
+					break;
+					// 右
+					case 2:
+					if (x < 3) {
+						if (typeof this.state[x + 1][y] === 'undefined' || this.state[x + 1][y] === this.state[x][y]) {
+							return true
+						}
 					}
-				}
-				//  下
-				if (dir === 4 && typeof this.state[i][j] !== 'undefined' && j < 3) {
-					if (typeof this.state[j + 1][i] === 'undefined' || this.state[j + 1][i] === this.state[i][j]) {
-						return true
+					break;
+					// 上
+					case 3:
+					if (y > 0) {
+						if (typeof this.state[x][y - 1] === 'undefined' || this.state[x][y - 1] === this.state[x][y]) {
+							return true
+						}
 					}
+					break;
+					//  下
+					case 4:
+					if (y < 3) {
+						if (typeof this.state[x][y - 1] === 'undefined' || this.state[x][y - 1] === this.state[x][y]) {
+							return true
+						}
+					}
+					break;
 				}
 			}
 			return false
@@ -396,8 +368,6 @@ class Index extends Canvas{
 	keyboardHandle (e) {
 		const ev = e || window.event
 		if (ev.keyCode === 37 || ev.keyCode === 38 || ev.keyCode === 39 || ev.keyCode === 40) {
-			this.preOperate()
-
 			/** 方向对应num
 			**  左：1
 			**  右：2
@@ -422,9 +392,6 @@ class Index extends Canvas{
 				this.operate(4)
 				break;
 			}
-
-			// 再随机生成一个
-			this.randProdBox()
 		}
 	}
 
@@ -434,4 +401,4 @@ class Index extends Canvas{
 	}
 }
 
-export default Index
+export default Game
