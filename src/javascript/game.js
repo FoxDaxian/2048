@@ -1,38 +1,55 @@
 import Canvas from './Canvas.js'
 import colors from '../config/color.js'
 
-// 游戏规则很简单：每次控制所有方块向同一个方向运动，两个相同数字的方块撞在一起之后合并成为他们的和，每次操作之后会在空白的方格处随机生成一个2或者4，最终得到一个“2048”的方块就算胜利了。如果16个格子全部填满并且相邻的格子都不相同也就是无法移动的话，那么恭喜你，gameover。
-
 class Game extends Canvas{
 	constructor () {
 		super()
+		this.score = 0
+		this.playing = false
 		this.count = 4
 		this.boxGap = 20
-		this.boxSize = (this.size - (this.count + 1) * this.boxGap) / this.count
+		this.forScoreSize = this.size * 0.8
+		this.canvasSpace = this.size * 0.1
+		this.boxSize = (this.forScoreSize - (this.count + 1) * this.boxGap) / this.count
 		this.ctx = this.canvas.getContext('2d')
-
 		// 存储状态的数组
 		this.state = []
-		this.initState()
 		// 随机生成，防止重复
 		this.randArr = []
-		this.initrandArr()
-
-		this.init()
-		this.bindEvent()
-
 	}
 
-	// 游戏入口
+	// 开始界面
 	init () {
+		this.canvas.addEventListener('click', () => {
+			if (!this.playing) {
+				this.start()
+				this.playing = !this.playing
+			}
+		})
+		this.ctx.fillStyle = colors.scoreColor
+		this.ctx.textAlign = 'center'
+		this.ctx.textBaseline = 'middle'
+		this.ctx.font = '30px sans-serif'
+		this.ctx.fillText('click to start', this.size / 2, this.size / 2)
+	}
+
+	// 游戏开始
+	start () {
+		console.log('开始')
+		// init状态
+		this.initrandArr()
+		this.initState()
+
 		this.preOperate()
+		this.drawScore()
 		this.randProdBox()
+		this.bindEvent()
 	}
 
 	// 初始化二位数组状态
 	initState () {
 		for (let i = 0; i++ < this.count;) {
-			this.state.push([])
+			this.state.push(new Array(4).fill(undefined))
 		}
 	}
 
@@ -51,30 +68,41 @@ class Game extends Canvas{
 		this.drawBoxBg()
 	}
 
+	// 分数显示
+	drawScore (score = 0) {
+		this.score += score
+		this.ctx.fillStyle = colors.scoreColor
+		this.ctx.textAlign = 'center'
+		this.ctx.textBaseline = 'middle'
+		this.ctx.font = '30px sans-serif'
+		this.ctx.fillText(`SCORE: ${ this.score }`, this.size / 2, this.canvasSpace)
+	}
+
 	// 画大背景
 	drawBg () {
 		this.ctx.fillStyle = colors.bg
-		this.ctx.fillRect(0, 0, this.size, this.size)
+		this.ctx.fillRect(this.canvasSpace, this.canvasSpace * 2, this.forScoreSize, this.forScoreSize)
 	}
 
 	// 画方块槽
 	drawBoxBg () {
 		this.ctx.fillStyle = colors.boxBg
-		for (let i = 0; i < this.count; i++) {
-			for (let j = 0; j < this.count; j++) {
-				this.ctx.fillRect(this.boxSize * (j + 0) + this.boxGap * (j + 1), this.boxGap * (i + 1) + this.boxSize * i, this.boxSize, this.boxSize)
-				this.ctx.fillRect(this.boxSize * (j + 1) + this.boxGap * (j + 2), this.boxGap * (i + 1) + this.boxSize * i, this.boxSize, this.boxSize)
-				this.ctx.fillRect(this.boxSize * (j + 2) + this.boxGap * (j + 3), this.boxGap * (i + 1) + this.boxSize * i, this.boxSize, this.boxSize)
-				this.ctx.fillRect(this.boxSize * (j + 3) + this.boxGap * (j + 4), this.boxGap * (i + 1) + this.boxSize * i, this.boxSize, this.boxSize)
-			}
+		const getX = (index) => this.boxSize * index + this.boxGap * (index + 1) + this.canvasSpace
+		const getY = (y) => this.boxGap * (y + 1) + this.boxSize * y + this.canvasSpace * 2
+		for (let y = 0; y < this.count; y++) {
+			let index = 0
+			this.ctx.fillRect(getX(index++), getY(y), this.boxSize, this.boxSize)
+			this.ctx.fillRect(getX(index++), getY(y), this.boxSize, this.boxSize)
+			this.ctx.fillRect(getX(index++), getY(y), this.boxSize, this.boxSize)
+			this.ctx.fillRect(getX(index++), getY(y), this.boxSize, this.boxSize)
 		}
 	}
 
 	// 画一个随机的方块
-	drawBox (x, y, num) {
+	drawRandomBox (x, y, num) {
 
-		const realX = (this.boxSize * x) + this.boxGap * (x + 1)
-		const realY = (this.boxSize * y) + this.boxGap * (y + 1)
+		const realX = (this.boxSize * x) + this.boxGap * (x + 1) + this.canvasSpace
+		const realY = (this.boxSize * y) + this.boxGap * (y + 1) + this.canvasSpace * 2
 
 		this.ctx.fillStyle = colors[num]
 		this.ctx.fillRect(realX, realY, this.boxSize, this.boxSize)
@@ -90,13 +118,16 @@ class Game extends Canvas{
 
 	// 画操作之后的所有方块，对应state
 	drawAll () {
-		for (var x = 0; x < this.count; x++) {
-			for (var y = 0; y < this.count; y++) {
-				if (typeof this.state[x][y] !== 'undefined') {
-					this.drawBox(x, y, this.state[x][y])
-				}
+		// 扁平化数组, const + apply 是效率高的一组配合
+		const arr = [].concat.apply([], this.state)
+
+		arr.map((num, index) => {
+			if (typeof num !== 'undefined') {
+				const x = ~~(index / this.count)
+				const y = index % this.count
+				this.drawRandomBox(x, y, this.state[x][y])
 			}
-		}
+		})
 	}
 
 	// 随机生成一个方块坐标
@@ -107,17 +138,16 @@ class Game extends Canvas{
 			const x = rand % this.count
 			const y = ~~(rand / this.count)
 			this.state[x][y] = num
-			this.drawBox(x, y, num)
+			this.drawRandomBox(x, y, num)
 		}
 	}
 
 	// 操作并计算重绘所有方块
 	operate (dir) {
 		const flag = this.hasMove(dir)
-		console.log(flag)
 		if (flag) {
 			this.preOperate()
-			this.justMove(dir)
+			this.drawScore(this.justMove(dir))
 			this.drawAll()
 			// 再随机生成一个
 			this.randProdBox()
@@ -126,6 +156,7 @@ class Game extends Canvas{
 
 	// 进行移动操作
 	justMove (dir) {
+		let score = 0
 		// 操作过了
 		const operated = (x, y, tempx, tempy) => {
 			if (typeof this.state[x][y] === 'undefined') {
@@ -138,7 +169,7 @@ class Game extends Canvas{
 				return true
 			} else {
 				if (this.state[x][y] === this.state[tempx][tempy]) {
-					this.state[x][y] *= 2
+					score = this.state[x][y] *= 2
 					this.state[tempx][tempy] = undefined
 
 					this.insetToRandArr(tempy * this.count + tempx, this.randArr)
@@ -191,7 +222,7 @@ class Game extends Canvas{
 			}
 		}
 
-		const canRestart = (x, y) => {
+		const canMove = (x, y) => {
 			let condition = this.findExist(x, y, dir)
 
 			if (condition !== -1) {
@@ -207,7 +238,7 @@ class Game extends Canvas{
 			case 1:
 			for (let y = 0; y < this.count; y++) {
 				for (let x = 0; x < this.count; x++) {
-					canRestart(x, y) && x--
+					canMove(x, y) && x--
 				}
 			}
 			break;
@@ -215,7 +246,7 @@ class Game extends Canvas{
 			case 2:
 			for (let y = 0; y < this.count; y++) {
 				for (let x = this.count - 1; x > -1; x--) {
-					canRestart(x, y) && x++
+					canMove(x, y) && x++
 				}
 			}
 			break;
@@ -223,7 +254,7 @@ class Game extends Canvas{
 			case 3:
 			for (let x = 0; x < this.count; x++) {
 				for (let y = 0; y < this.count; y++) {
-					canRestart(x, y) && y--
+					canMove(x, y) && y--
 				}
 			}
 			break;
@@ -231,11 +262,12 @@ class Game extends Canvas{
 			case 4:
 			for (let x = 0; x < this.count; x++) {
 				for (let y = this.count - 1; y > -1; y--) {
-					canRestart(x, y) && y++
+					canMove(x, y) && y++
 				}
 			}
 			break;
 		}
+		return score
 	}
 
 	// 在randArr插入一个

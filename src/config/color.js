@@ -14,7 +14,8 @@ const colors = {
 	'8192' : '#9A26C8',
 	boxBg: '#CDC1B4',
 	bg: '#BBADA1',
-	fontColor: '#fff'
+	fontColor: '#fff',
+	scoreColor: 'red'
 }
 
 export default colors
