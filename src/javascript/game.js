@@ -16,6 +16,8 @@ class Game extends Canvas{
 		this.state = []
 		// 随机生成，防止重复
 		this.randArr = []
+
+		this.bindEvent()
 	}
 
 	// 开始界面
@@ -43,7 +45,25 @@ class Game extends Canvas{
 		this.preOperate()
 		this.drawScore()
 		this.randProdBox()
-		this.bindEvent()
+	}
+
+	// 游戏结束
+	gameOver () { 
+		this.ctx.save()
+		this.ctx.fillStyle = colors.scoreColor
+		this.ctx.textAlign = 'center'
+		this.ctx.textBaseline = 'middle'
+		this.ctx.font = '30px sans-serif'
+		this.ctx.fillText(`游戏结束，您的分数: ${ this.score }`, this.size / 2, this.size / 2)
+		this.ctx.fillText(`点击重玩`, this.size / 2, this.size / 2 + 50)
+		this.ctx.restore()
+
+		// 存储状态的数组
+		this.state = []
+		// 随机生成，防止重复
+		this.randArr = []
+		this.playing = !this.playing
+		this.score = 0
 	}
 
 	// 初始化二位数组状态
@@ -70,12 +90,14 @@ class Game extends Canvas{
 
 	// 分数显示
 	drawScore (score = 0) {
+		this.ctx.save()
 		this.score += score
 		this.ctx.fillStyle = colors.scoreColor
 		this.ctx.textAlign = 'center'
 		this.ctx.textBaseline = 'middle'
 		this.ctx.font = '30px sans-serif'
 		this.ctx.fillText(`SCORE: ${ this.score }`, this.size / 2, this.canvasSpace)
+		this.ctx.restore()
 	}
 
 	// 画大背景
@@ -151,6 +173,10 @@ class Game extends Canvas{
 			this.drawAll()
 			// 再随机生成一个
 			this.randProdBox()
+			if (!this.hasMove(1) && !this.hasMove(2) && !this.hasMove(3) && !this.hasMove(4)) {
+				console.log('游戏结束')
+				this.gameOver()
+			}
 		}
 	}
 
@@ -385,7 +411,7 @@ class Game extends Canvas{
 					//  下
 					case 4:
 					if (y < 3) {
-						if (typeof this.state[x][y - 1] === 'undefined' || this.state[x][y - 1] === this.state[x][y]) {
+						if (typeof this.state[x][y + 1] === 'undefined' || this.state[x][y + 1] === this.state[x][y]) {
 							return true
 						}
 					}
