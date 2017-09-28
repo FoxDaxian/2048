@@ -37,7 +37,6 @@ class Game extends Canvas{
 
 	// 游戏开始
 	start () {
-		console.log('开始')
 		// init状态
 		this.initrandArr()
 		this.initState()
@@ -89,9 +88,8 @@ class Game extends Canvas{
 	}
 
 	// 分数显示
-	drawScore (score = 0) {
+	drawScore () {
 		this.ctx.save()
-		this.score += score
 		this.ctx.fillStyle = colors.scoreColor
 		this.ctx.textAlign = 'center'
 		this.ctx.textBaseline = 'middle'
@@ -169,12 +167,12 @@ class Game extends Canvas{
 		const flag = this.hasMove(dir)
 		if (flag) {
 			this.preOperate()
-			this.drawScore(this.justMove(dir))
+			this.justMove(dir)
+			this.drawScore()
 			this.drawAll()
 			// 再随机生成一个
 			this.randProdBox()
 			if (!this.hasMove(1) && !this.hasMove(2) && !this.hasMove(3) && !this.hasMove(4)) {
-				console.log('游戏结束')
 				this.gameOver()
 			}
 		}
@@ -182,7 +180,6 @@ class Game extends Canvas{
 
 	// 进行移动操作
 	justMove (dir) {
-		let score = 0
 		// 操作过了
 		const operated = (x, y, tempx, tempy) => {
 			if (typeof this.state[x][y] === 'undefined') {
@@ -195,7 +192,8 @@ class Game extends Canvas{
 				return true
 			} else {
 				if (this.state[x][y] === this.state[tempx][tempy]) {
-					score = this.state[x][y] *= 2
+					this.state[x][y] *= 2
+					this.score += this.state[x][y]
 					this.state[tempx][tempy] = undefined
 
 					this.insetToRandArr(tempy * this.count + tempx, this.randArr)
@@ -293,7 +291,6 @@ class Game extends Canvas{
 			}
 			break;
 		}
-		return score
 	}
 
 	// 在randArr插入一个

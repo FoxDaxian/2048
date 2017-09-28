@@ -1,3 +1,4 @@
+import "babel-polyfill"
 import './scss/index.scss'
 import Game from './javascript/game.js'
 
